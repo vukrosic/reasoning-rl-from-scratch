@@ -1,0 +1,205 @@
+=== step1_base.py
+three lines of the text it reads:
+   6 x6 +1 x6 +8 = 0 END
+   5 x3 +5 x9 +1 = 5 0 0 1 END
+   2 +7 x2 +7 +3 = 8 END
+lines read: 1,280,000    weights in the model: 104,862
+accuracy on 2,000 test questions: 72.2%
+questions with 2 or more keys answered with steps: 18.1%
+  right when it shows steps: 96.7%    right when it only answers: 59.7%
+  keys   accuracy   digits written   shows steps
+     1      99.7%             1.00          0.0%
+     2      95.3%             1.18         17.9%
+     3      79.3%             1.38         19.3%
+     4      48.5%             1.48         16.1%
+     5      44.4%             1.75         18.9%
+=== step2_reward.py
+question: 3 x6 x3 +9 +1 =    display after each key: [8, 4, 3, 4]    right answer: 4
+chance of each digit as the first token:
+   0: 14%  1: 1%  2: 13%  3: 2%  4: 21%  5: 1%  6: 10%  7: 1%  8: 37%  9: 1%
+8 answers from the same model to the same question:
+   0 END          reward 0
+   4 END          reward 1
+   8 END          reward 0
+   8 6 5 6 END    reward 0
+   8 4 3 4 END    reward 1
+   6 END          reward 0
+   4 END          reward 1
+   4 END          reward 1
+   4 of 8 right
+=== step3_reinforce.py
+weight of each answer = its reward (1 or 0). 512 answers per round.
+  answers scored   accuracy   shows steps
+               0      72.2%         18.1%
+           5,120      74.5%         15.4%
+          10,240      74.9%         12.1%
+          15,360      75.3%         11.5%
+          20,480      75.9%         12.2%
+          25,600      76.3%         11.1%
+          30,720      76.6%         11.2%
+          35,840      77.7%         12.6%
+          40,960      77.8%         12.6%
+          46,080      77.7%         13.0%
+          51,200      78.1%         12.5%
+          56,320      78.4%         11.3%
+          61,440      78.5%         11.1%
+          66,560      79.8%         13.4%
+          71,680      81.1%         15.0%
+          76,800      81.8%         16.3%
+          81,920      82.3%         16.3%
+          87,040      82.5%         16.5%
+          92,160      82.5%         16.7%
+          97,280      81.7%         15.4%
+         102,400      82.2%         15.7%
+=== step4_group.py
+3 x6 x3 +9 +1 =    rewards [0, 1, 0, 0, 1, 0, 1, 1]    average 0.500    spread 0.500
+   advantages -1.00  +1.00  -1.00  -1.00  +1.00  -1.00  +1.00  +1.00
+4 +3 =    rewards [1, 1, 1, 1, 1, 1, 1, 1]    average 1.000    spread 0.000
+   advantages +0.00  +0.00  +0.00  +0.00  +0.00  +0.00  +0.00  +0.00
+0 +2 +4 +6 x7 =    rewards [0, 0, 0, 1, 0, 0, 0, 1]    average 0.250    spread 0.433
+   advantages -0.58  -0.58  -0.58  +1.73  -0.58  -0.58  -0.58  +1.73
+weight of each answer = its advantage. 64 questions x 8 answers per round.
+  answers scored   accuracy   shows steps
+               0      72.2%         18.1%
+           5,120      77.4%         26.9%
+          10,240      79.8%         36.8%
+          15,360      84.0%         48.6%
+          20,480      88.2%         58.3%
+          25,600      91.2%         69.3%
+          30,720      93.8%         76.3%
+          35,840      95.1%         79.7%
+          40,960      96.0%         82.0%
+          46,080      96.2%         83.1%
+          51,200      96.5%         84.6%
+          56,320      97.1%         85.0%
+          61,440      97.4%         85.6%
+          66,560      97.7%         86.4%
+          71,680      98.0%         87.1%
+          76,800      98.1%         87.8%
+          81,920      98.2%         89.1%
+          87,040      98.5%         89.3%
+          92,160      98.8%         90.3%
+          97,280      98.9%         91.7%
+         102,400      99.0%         91.7%
+=== step5_clip.py
+ratio = new chance / old chance.   gain kept after the clip:
+   ratio    good answer (A = +1)    bad answer (A = -1)
+     0.5                    0.50                  -0.80
+     0.8                    0.80                  -0.80
+     1.0                    1.00                  -1.00
+     1.2                    1.20                  -1.20
+     1.5                    1.20                  -1.50
+     3.0                    1.20                  -3.00
+16 updates on every batch, no clip:
+  answers scored   accuracy   shows steps
+               0      72.2%         18.1%
+           5,120      72.5%         60.6%
+          10,240      79.2%         74.4%
+          15,360      90.2%         82.9%
+          20,480      85.7%         79.0%
+          25,600      90.5%         86.4%
+          30,720      89.1%         93.6%
+16 updates on every batch, clip 0.2:
+  answers scored   accuracy   shows steps
+               0      72.2%         18.1%
+           5,120      88.5%         74.7%
+          10,240      91.8%         87.2%
+          15,360      95.9%         88.1%
+          20,480      96.7%         93.2%
+          25,600      95.9%         93.0%
+          30,720      98.1%         94.7%
+=== step6_train.py
+GRPO: 64 questions x 8 answers per round, 4 updates per batch, clip 0.2, beta 0.04
+  answers scored   accuracy   shows steps
+               0      72.2%         18.1%
+           5,120      83.5%         47.9%
+          10,240      92.6%         67.3%
+          15,360      95.5%         74.0%
+          20,480      96.5%         73.4%
+          25,600      97.2%         70.5%
+          30,720      98.1%         70.4%
+          35,840      97.2%         64.4%
+          40,960      97.5%         64.1%
+          46,080      98.0%         67.5%
+          51,200      98.3%         65.9%
+          56,320      97.8%         65.2%
+          61,440      98.4%         64.7%
+          66,560      98.2%         64.7%
+          71,680      98.4%         63.1%
+          76,800      98.6%         64.1%
+          81,920      98.5%         63.0%
+          87,040      98.7%         65.9%
+          92,160      99.1%         65.8%
+          97,280      98.7%         64.6%
+         102,400      98.8%         65.6%
+=== step7_what_changed.py
+--- base
+accuracy on 2,000 test questions: 72.2%
+questions with 2 or more keys answered with steps: 18.1%
+  right when it shows steps: 96.7%    right when it only answers: 59.7%
+  keys   accuracy   digits written   shows steps
+     1      99.7%             1.00          0.0%
+     2      95.3%             1.18         17.9%
+     3      79.3%             1.38         19.3%
+     4      48.5%             1.48         16.1%
+     5      44.4%             1.75         18.9%
+the question from step 2, 3 x6 x3 +9 +1 =
+   0 END          reward 0
+   4 END          reward 1
+   8 END          reward 0
+   8 6 5 6 END    reward 0
+   8 4 3 4 END    reward 1
+   6 END          reward 0
+   4 END          reward 1
+   4 END          reward 1
+   4 of 8 right
+--- after GRPO
+accuracy on 2,000 test questions: 98.8%
+questions with 2 or more keys answered with steps: 65.6%
+  right when it shows steps: 99.0%    right when it only answers: 97.5%
+  keys   accuracy   digits written   shows steps
+     1     100.0%             1.00          0.0%
+     2      98.7%             1.09          8.9%
+     3      98.0%             2.36         68.0%
+     4      98.2%             3.66         88.7%
+     5      99.1%             4.67         91.7%
+the question from step 2, 3 x6 x3 +9 +1 =
+   8 4 3 4 END    reward 1
+   8 4 3 4 END    reward 1
+   8 4 3 4 END    reward 1
+   8 4 3 4 END    reward 1
+   8 4 3 4 END    reward 1
+   8 4 3 4 END    reward 1
+   8 4 3 4 END    reward 1
+   8 4 3 4 END    reward 1
+   8 of 8 right
+--- one answer each to five more test questions (right answer in brackets)
+   1 x8 =                 [8]   base: 8 END            after: 8 END
+   7 +7 +2 =              [6]   base: 6 END            after: 6 END
+   0 +6 x2 +8 =           [0]   base: 0 END            after: 6 2 0 END
+   4 +2 x9 x2 +3 =        [1]   base: 3 END            after: 6 4 8 1 END
+   8 +6 +6 x6 x9 +2 =     [2]   base: 0 END            after: 4 0 0 0 2 END
+=== step8_knobs.py
+beta 0.0  (groups of 8)
+   accuracy 99.1%   shows steps 89.9%   digits written, by keys: 1: 1.0  2: 1.7  3: 2.8  4: 3.9  5: 5.0
+beta 0.04  (groups of 8)
+   accuracy 98.3%   shows steps 65.9%   digits written, by keys: 1: 1.0  2: 1.2  3: 2.3  4: 3.6  5: 4.6
+beta 1.0  (groups of 8)
+   accuracy 79.0%   shows steps 26.8%   digits written, by keys: 1: 1.0  2: 1.2  3: 1.4  4: 1.9  5: 2.5
+groups of 2  (256 questions per round, beta 0.04)
+   accuracy 97.9%   shows steps 63.0%   digits written, by keys: 1: 1.0  2: 1.1  3: 2.2  4: 3.5  5: 4.6
+groups of 4  (128 questions per round, beta 0.04)
+   accuracy 97.9%   shows steps 66.4%   digits written, by keys: 1: 1.0  2: 1.2  3: 2.3  4: 3.6  5: 4.7
+groups of 16  (32 questions per round, beta 0.04)
+   accuracy 98.0%   shows steps 71.1%   digits written, by keys: 1: 1.0  2: 1.2  3: 2.4  4: 3.7  5: 4.8
+=== exercise_cost.py
+reward = right answer (1 or 0) minus 0.05 for every scratch digit
+accuracy on 2,000 test questions: 95.9%
+questions with 2 or more keys answered with steps: 43.5%
+  right when it shows steps: 99.0%    right when it only answers: 92.0%
+  keys   accuracy   digits written   shows steps
+     1      99.7%             1.00          0.0%
+     2      99.7%             1.01          0.5%
+     3      90.7%             1.43         21.6%
+     4      94.0%             2.99         66.3%
+     5      96.3%             4.29         82.3%
